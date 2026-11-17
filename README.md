@@ -1,287 +1,279 @@
-# 🥔 Potato Leaf Disease Detector
+# Potato Leaf Disease Classifier
 
-An AI-powered web application that identifies common potato leaf diseases from uploaded images using a trained Convolutional Neural Network (CNN).
+**CNN-powered potato leaf disease screening with a Streamlit interface, FastAPI inference service, and downloadable PDF reports.**
 
-> [!NOTE]
-> This project was built as a final-year AI/ML project. The CNN model was trained on a dataset of potato leaf images and classifies them into three categories: **Early Blight**, **Late Blight**, and **Healthy**.
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras-FF6F00?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 
----
+## Overview
 
-## 📋 Problem Statement
+This project demonstrates an end-to-end image classification workflow for identifying common diseases in potato leaves. A custom Convolutional Neural Network (CNN), trained with TensorFlow/Keras, classifies an uploaded leaf image into one of three categories:
 
-Potato crops are susceptible to diseases like Early Blight and Late Blight, which can significantly reduce yield if not detected early. Manual inspection is time-consuming and requires expertise. This application provides a quick AI-based screening tool that farmers and agricultural students can use to get an initial assessment by simply uploading a photo of a potato leaf.
+- **Early Blight** (`Potato___Early_blight`)
+- **Late Blight** (`Potato___Late_blight`)
+- **Healthy** (`Potato___healthy`)
 
----
+The application provides predicted class scores, supporting disease information, and a downloadable PDF summary. It is intended as an **educational prototype and preliminary screening aid**, not a substitute for laboratory testing or expert agricultural diagnosis.
 
-## 🛠️ Technologies Used
+## Problem Statement
 
-| Component | Technology |
-|-----------|-----------|
-| **Frontend** | Python, Streamlit |
-| **Backend** | Python, FastAPI, Uvicorn |
-| **ML Framework** | TensorFlow 2.22.0-rc0, Keras 3.16.0 |
-| **Image Processing** | Pillow (PIL), NumPy |
-| **PDF Reports** | ReportLab |
-| **HTTP Client** | Python `requests` |
-| **Testing** | pytest, httpx |
+Potato crops are vulnerable to leaf diseases that can affect plant health and crop yield. Visual identification may require experience and can be difficult when symptoms overlap. This project explores how deep learning can assist with preliminary classification from leaf photographs through an accessible web interface.
 
----
+## Key Features
 
-## 🧠 CNN Model Overview
+- **Image upload:** JPG, JPEG, and PNG images, with server-side validation and a 5 MB upload limit.
+- **CNN inference:** Classification into Early Blight, Late Blight, or Healthy.
+- **Prediction transparency:** Display of the selected class and all three model probability scores.
+- **Informational guidance:** Disease descriptions and general precautions.
+- **PDF export:** Downloadable report containing the image, predicted class, scores, and guidance.
+- **Separation of concerns:** Streamlit user interface and FastAPI inference service.
+- **API tests:** Automated checks for endpoint behavior, input validation, and response structure.
 
-The model is a custom **Sequential CNN** built with TensorFlow/Keras:
+## Technology Stack
 
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Python, Streamlit, custom CSS |
+| Backend API | FastAPI, Uvicorn, Pydantic |
+| Deep learning | TensorFlow, Keras |
+| Image processing | Pillow, NumPy |
+| API communication | Requests |
+| Report generation | ReportLab |
+| Testing | pytest, httpx |
+
+> The original development environment used TensorFlow 2.22.0-rc0 and Keras 3.16.0. Check `requirements.txt` and package compatibility when installing on another Python version or deployment platform.
+
+## System Architecture
+
+```text
+                   User / Browser
+                          |
+                  Upload leaf image
+                          v
+                Streamlit Frontend
+                  (localhost:8501)
+                          |
+                    HTTP POST
+                     /predict
+                          v
+                   FastAPI API
+                  (127.0.0.1:8000)
+                          |
+              Validate uploaded image
+                          |
+               Convert to RGB, resize
+                    to 128 x 128
+                          |
+              Load trained Keras CNN
+                          |
+               Predict class scores
+                          |
+                   JSON response
+                          v
+                Streamlit Frontend
+                          |
+          Prediction + guidance + PDF
 ```
-Input (128×128×3)
-  → Rescaling (1/255)
-  → Data Augmentation (flips, rotation, zoom, contrast)
-  → Conv2D(32) → BatchNorm → ReLU → MaxPool
-  → Conv2D(64) → BatchNorm → ReLU → MaxPool
-  → Conv2D(128) → BatchNorm → ReLU → MaxPool
-  → Conv2D(256) → BatchNorm → ReLU → MaxPool
-  → GlobalAveragePooling2D
-  → Dense(128, ReLU) → Dropout(0.3)
-  → Dense(3, Softmax)
+
+The frontend handles user interaction and presentation. The backend validates images, preprocesses inputs, performs model inference, and returns structured prediction results. The two services run separately in the current local-development configuration.
+
+## CNN Architecture
+
+The project uses a custom CNN with four convolutional blocks:
+
+```text
+Input: RGB image (128 x 128 x 3)
+   |
+Rescaling (1/255)
+   |
+Data augmentation (training only)
+   |
+Conv2D(32)  -> BatchNorm -> ReLU -> MaxPooling
+   |
+Conv2D(64)  -> BatchNorm -> ReLU -> MaxPooling
+   |
+Conv2D(128) -> BatchNorm -> ReLU -> MaxPooling
+   |
+Conv2D(256) -> BatchNorm -> ReLU -> MaxPooling
+   |
+GlobalAveragePooling2D
+   |
+Dense(128, ReLU) -> Dropout(0.3)
+   |
+Dense(3, Softmax)
+   |
+Early Blight / Late Blight / Healthy
 ```
 
-**Key details:**
-- **Input**: 128×128 RGB images (pixel values 0–255; the model rescales internally)
-- **Output**: 3 classes — `Potato___Early_blight`, `Potato___Late_blight`, `Potato___healthy`
-- **Training data**: ~1,722 training images, ~430 validation images
-- **Validation accuracy**: ~97%
-- **Augmentation** is baked into the model but only active during training (`training=True`)
+### Input processing and inference
 
----
+1. The backend checks file type, file size, and whether the upload is a readable image.
+2. The image is converted to RGB and resized to **128 × 128** pixels.
+3. Pixel data is converted into a `float32` NumPy array with shape **`(1, 128, 128, 3)`**.
+4. Input values remain on the **0–255** scale because the model contains its own rescaling layer.
+5. The CNN runs in inference mode (`training=False`); training-only augmentation and dropout are disabled.
+6. The Softmax output provides three class scores. `argmax` selects the highest-scoring class.
 
-## 🏗️ Project Architecture
+**Important:** Softmax confidence is a model score, not a guarantee that the diagnosis is correct.
 
-Yeh project **frontend-backend architecture** use karta hai, jisme Streamlit aur FastAPI alag-alag servers pe run karte hain:
+## Dataset and Evaluation
 
-```
-User (Browser)
-     │
-     ▼
-Streamlit Frontend (port 8501)
-     │  HTTP POST /predict
-     ▼
-FastAPI Backend (port 8000)
-     │
-     ▼
-Image Validation → Preprocessing → CNN Model → Prediction JSON
-     │
-     ▼
-Streamlit shows results + PDF download
-```
+The documented dataset contains **2,152 potato leaf images**, split into approximately **1,722 training** and **430 validation** images (80/20 split).
 
-**Frontend (Streamlit)** sirf UI handle karta hai — image upload, preview, results display, aur PDF download. Yeh kabhi bhi directly model ko call nahi karta.
+| Class | Total images |
+| --- | ---: |
+| Early Blight | 1,000 |
+| Late Blight | 1,000 |
+| Healthy | 152 |
+| **Total** | **2,152** |
 
-**Backend (FastAPI)** saara ML kaam karta hai — image validate karna, preprocess karna, model se prediction lena, aur JSON response bhejta hai.
+The original project documentation reports **approximately 97% validation accuracy**. This figure refers to the validation split, **not an independent held-out test set**. Results may differ on real-world images because of lighting, backgrounds, image quality, class imbalance, and distribution shifts. No independently measured field-performance claim is made here.
 
----
+The Healthy class is less represented than the disease classes. This imbalance should be considered when interpreting overall accuracy and future per-class evaluation.
 
-## 📂 Folder Structure
+## Project Structure
 
-```
+```text
 potato-leaf-detector/
-│
-├── frontend/
-│   ├── app.py              # Streamlit single-page application
-│   └── styles.py           # Custom CSS styles
-│
 ├── backend/
-│   ├── __init__.py          # Package marker
-│   ├── main.py              # FastAPI app with /health and /predict endpoints
-│   ├── model_service.py     # Model loading and inference logic
-│   ├── schemas.py           # Pydantic request/response schemas
-│   └── disease_info.py      # Disease descriptions and guidance text
-│
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI endpoints
+│   ├── model_service.py        # Model loading and inference
+│   ├── schemas.py              # Response schemas
+│   └── disease_info.py         # Disease information
+├── frontend/
+│   ├── app.py                  # Streamlit application
+│   └── styles.py               # Custom styling
 ├── models/
-│   ├── potato_cnn_model.keras   # Trained CNN model (saved Keras format)
-│   └── class_names.txt          # Ordered class labels
-│
+│   ├── potato_cnn_model.keras  # Saved trained model
+│   └── class_names.txt         # Ordered class labels
 ├── utils/
-│   ├── __init__.py          # Package marker
-│   └── pdf_generator.py     # ReportLab PDF report generator
-│
+│   ├── __init__.py
+│   └── pdf_generator.py        # PDF report generation
 ├── tests/
-│   └── test_api.py          # Automated backend tests
-│
-├── requirements.txt         # Python dependencies
-├── .env.example             # Environment variable template
-├── .gitignore               # Git ignore rules
-└── README.md                # This file
+│   └── test_api.py             # API tests
+├── .env.example                # Environment configuration example
+├── .gitignore
+├── requirements.txt
+└── README.md
 ```
 
----
-
-## 🔄 How It Works
-
-### 1. Image Upload
-User apni potato leaf ki photo (JPG/JPEG/PNG) Streamlit frontend pe upload karta hai.
-
-### 2. Image Processing (Backend)
-Jab user "Analyze Leaf" button click karta hai:
-1. Frontend image bytes ko FastAPI backend pe HTTP POST `/predict` se bhejta hai
-2. Backend file type, size (max 5 MB), aur image validity check karta hai
-3. Image ko **RGB** me convert karke **128×128** me resize karta hai
-4. NumPy array (float32) me convert karke batch dimension add karta hai → shape `(1, 128, 128, 3)`
-5. **Pixel values 0–255 pe rehti hain** — model ke andar Rescaling layer khud 0–1 me convert karta hai
-
-### 3. Model Prediction
-- Model `training=False` mode me run hota hai (BatchNorm running stats use karta hai, Dropout inactive)
-- Softmax layer teeno classes ke liye probability scores deta hai
-- Sabse zyada score wali class ko `argmax` se select karte hain
-
-### 4. Results Display
-- Predicted disease name with colour badge (Green/Amber/Red)
-- Confidence score percentage
-- All three class scores as progress bars
-- Disease description and precautions
-- AI disclaimer
-
-### 5. PDF Report
-- ReportLab se ek professional PDF memory me generate hoti hai
-- Usme image thumbnail, scores, description, precautions sab hota hai
-- `st.download_button` se directly download hota hai — koi server storage nahi
-
----
-
-## 🚀 Installation Instructions
+## Getting Started
 
 ### Prerequisites
-- **Python 3.11+** (this project was developed with Python 3.14)
-- **Windows** with VS Code (or any terminal)
 
-### Step 1: Navigate to the project
+- Python and `pip` (use a Python version compatible with the packages in `requirements.txt`)
+- Git
+- A terminal (PowerShell examples are provided below)
+
+### 1. Clone the repository
 
 ```powershell
-cd c:\Users\yadav\OneDrive\Desktop\DeepLearning\potato-leaf-detector
+git clone https://github.com/anamika0001/potato-leaf-disease-classifier.git
+cd potato-leaf-disease-classifier
 ```
 
-### Step 2: Use the existing virtual environment
-
-The project uses the parent directory's `.venv`:
+### 2. Create and activate a virtual environment
 
 ```powershell
-cd c:\Users\yadav\OneDrive\Desktop\DeepLearning
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### Step 3: Install dependencies
+On macOS or Linux, activate it using `source .venv/bin/activate`.
+
+### 3. Install dependencies
 
 ```powershell
-pip install -r potato-leaf-detector\requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-> [!TIP]
-> TensorFlow aur Keras pehle se installed hain `.venv` me. Agar fresh environment bana rahe ho toh `tensorflow>=2.16.0` bhi install karo.
+If installation fails, verify the TensorFlow/Python version combination and the dependencies specified in `requirements.txt`.
 
----
+### 4. Start the backend
 
-## ▶️ Running the Application
-
-You need **two terminal windows** — one for the backend, one for the frontend.
-
-### Terminal 1 — Start FastAPI Backend
+Open a terminal in the repository root, activate the environment, and run:
 
 ```powershell
-cd c:\Users\yadav\OneDrive\Desktop\DeepLearning
-.\.venv\Scripts\Activate.ps1
-cd potato-leaf-detector
 python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Backend will be available at: `http://127.0.0.1:8000`
-API docs (Swagger): `http://127.0.0.1:8000/docs`
+- API base URL: `http://127.0.0.1:8000`
+- Interactive API documentation: `http://127.0.0.1:8000/docs`
+- Health endpoint: `http://127.0.0.1:8000/health`
 
-### Terminal 2 — Start Streamlit Frontend
+### 5. Start the frontend
+
+In a **second terminal**, activate the same environment from the repository root:
 
 ```powershell
-cd c:\Users\yadav\OneDrive\Desktop\DeepLearning
-.\.venv\Scripts\Activate.ps1
-cd potato-leaf-detector
 python -m streamlit run frontend/app.py
 ```
 
-Frontend will open at: `http://localhost:8501`
+Open **`http://localhost:8501`** in your browser. Keep the FastAPI service running while using the frontend.
 
-> [!IMPORTANT]
-> **Pehle backend start karo, phir frontend.** Agar backend nahi chal raha toh frontend pe "Unable to connect to the prediction service" error aayega.
+## Using the Application
 
----
+1. Upload a potato leaf image in JPG, JPEG, or PNG format.
+2. Select **Analyze Leaf**.
+3. Review the predicted class, class scores, and disease information.
+4. Optionally download the PDF report.
+5. Select **Analyze Another Image** to start a new analysis.
 
-## 🧪 Testing
+## API and Testing
 
-### Run automated tests
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/health` | `GET` | Check API health |
+| `/predict` | `POST` | Validate an uploaded image and return prediction results |
+| `/docs` | `GET` | View FastAPI's interactive API documentation |
+
+Run the automated API tests from the repository root:
 
 ```powershell
-cd c:\Users\yadav\OneDrive\Desktop\DeepLearning\potato-leaf-detector
-..\.venv\Scripts\python.exe -m pytest tests/test_api.py -v
+python -m pytest tests/test_api.py -v
 ```
 
-Tests cover:
-- ✅ Health endpoint
-- ✅ Valid image prediction (mocked model)
-- ✅ Corrupted image rejection
-- ✅ Unsupported format rejection
-- ✅ Oversized file rejection
-- ✅ Response schema validation
-- ✅ Correct class order
-- ✅ Model-not-loaded → 503 response
+The test suite is designed to cover health checks, valid image requests with mocked inference, unsupported or corrupted images, oversized uploads, response validation, class ordering, and model-unavailable behavior. **Mocked API tests do not independently establish CNN prediction accuracy.**
 
-### Manual testing
-1. Start both servers (backend + frontend)
-2. Open `http://localhost:8501` in your browser
-3. Upload any potato leaf image (JPG/PNG)
-4. Click "Analyze Leaf"
-5. Check prediction results, scores, and disease info
-6. Try downloading the PDF report
-7. Click "Analyze Another Image" to reset
+## Troubleshooting
 
----
+| Issue | Suggested check |
+| --- | --- |
+| Frontend cannot connect to the prediction service | Confirm FastAPI is running and that the frontend is configured to use its correct URL. |
+| Model fails to load | Confirm `models/potato_cnn_model.keras` exists and TensorFlow/Keras versions are compatible. |
+| `ModuleNotFoundError: backend` | Run the backend command from the repository root. |
+| Port 8000 or 8501 is already in use | Stop the conflicting process or configure an available port. |
+| TensorFlow import fails | Activate the correct environment and install compatible dependencies. |
 
-## ❗ Common Errors and Fixes
+Stop either service with **Ctrl+C** in its terminal.
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| "Unable to connect to the prediction service" | FastAPI backend is not running | Start the backend first with `uvicorn` command |
-| "Model could not be loaded" | `potato_cnn_model.keras` missing from `models/` | Run the training script to generate the model |
-| `ModuleNotFoundError: No module named 'backend'` | Running from wrong directory | Make sure you `cd` into `potato-leaf-detector/` before running |
-| Port 8000 already in use | Another process on that port | Kill the process or use `--port 8001` |
-| Port 8501 already in use | Another Streamlit app running | Close the other Streamlit tab/process |
-| `ImportError: tensorflow` | TF not installed | `pip install tensorflow` in the venv |
+## Deployment Considerations
 
----
+The repository currently documents a **two-service architecture**. Hosting the Streamlit frontend alone does not automatically host the FastAPI inference backend. A public deployment requires a reachable backend URL, appropriate frontend configuration, compatible runtime dependencies, and security settings such as HTTPS, restricted CORS, and request-size limits.
 
-## 🛑 How to Stop and Restart
+Potential hosting approaches include deploying the frontend and backend separately or packaging both services for a suitable container-based platform. **No live deployment URL is provided in this repository documentation.**
 
-### Stop
-- Press **Ctrl+C** in each terminal window to stop the servers
+## Limitations and Future Work
 
-### Restart
-- Simply run the `uvicorn` and `streamlit` commands again
+- Evaluate the model on a separate test set and report per-class precision, recall, F1-score, and a confusion matrix.
+- Improve class balance and test performance on images captured outside the training dataset.
+- Add model versioning, reproducible training artifacts, and inference monitoring.
+- Evaluate robustness to lighting, leaf orientation, image backgrounds, and unfamiliar symptoms.
+- Deploy and validate the full frontend–backend workflow in a hosted environment.
 
----
+## Project Status
 
-## 🔮 Future Deployment Options
+**Educational prototype.** The repository contains the application source code and a saved CNN model. Local execution and deployment should be verified in the target environment before describing the application as production-ready.
 
-Agar aap is project ko internet pe deploy karna chahte ho:
+## Author
 
-1. **Streamlit Cloud** — Free hosting for Streamlit apps (frontend only; backend ko alag host karna padega)
-2. **Railway / Render** — Free tier pe FastAPI backend deploy kar sakte ho
-3. **Docker** — Dono services ko containerize karke ek saath deploy kar sakte ho
-4. **Google Cloud Run** — Serverless deployment for both services
-5. **AWS EC2 / Azure VM** — Full control wala deployment
+**Anamika Yadav**  
+GitHub: [@anamika0001](https://github.com/anamika0001)
 
-> [!CAUTION]
-> Production deployment ke liye CORS settings tighten karo, HTTPS enable karo, aur proper logging/monitoring setup karo. Current setup sirf local development ke liye hai.
+## Usage Notice
 
----
-
-## 📄 License
-
-This project is for educational purposes.
-
----
-
-*Built with ❤️ using TensorFlow, FastAPI, and Streamlit*
+Developed for educational and demonstration purposes. The classification output should not be treated as a definitive plant disease diagnosis. The statement of educational use is not an open-source license; reuse permissions should be specified separately if a license is added.
