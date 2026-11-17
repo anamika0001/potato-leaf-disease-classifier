@@ -16,7 +16,7 @@ python-multipart>=0.0.6
 # Machine Learning (match the training environment)
 # tensorflow and keras-nightly are already installed in the .venv
 # If starting fresh, uncomment the line below:
-# tensorflow>=2.16.0
+tensorflow==2.19.1
 numpy>=1.26.0
 pillow>=10.0.0
 

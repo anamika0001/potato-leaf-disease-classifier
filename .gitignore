@@ -17,6 +17,7 @@ build/
 venv/
 env/
 ENV/
+.venv-deploy/
 
 # 3. Environment variables and secrets
 .env
