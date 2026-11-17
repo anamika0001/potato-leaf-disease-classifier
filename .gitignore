@@ -1,0 +1,87 @@
+
+# ==========================================
+# Potato Leaf Disease Classifier - Git Ignore
+# ==========================================
+
+# 1. Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# 2. Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# 3. Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.toml
+.streamlit/secrets.toml
+
+# 4. IDE and editor files
+.vscode/
+.idea/
+*.code-workspace
+
+# 5. Jupyter Notebook temporary files
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# 6. Dataset (large training data)
+Data/
+data/
+dataset/
+datasets/
+
+# 7. Training artifacts and temporary models
+*.h5
+*.hdf5
+*.tflite
+*.ckpt
+*.weights.h5
+checkpoints/
+logs/
+tensorboard/
+
+# 8. IMPORTANT: Keep final trained Keras model
+# Do NOT ignore models/potato_cnn_model.keras
+
+# 9. Testing and coverage cache
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# 10. Streamlit cache
+.streamlit/cache/
+
+# 11. Temporary uploads and generated reports
+uploads/
+temp/
+tmp/
+reports/
+*.tmp
+*.log
+
+# 12. Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 13. Local configuration and backup files
+*.bak
+*.backup
+*.swp
+*.swo
