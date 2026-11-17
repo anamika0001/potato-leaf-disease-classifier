@@ -1,6 +1,14 @@
 # Potato Leaf Disease Classifier
 
 **CNN-powered potato leaf disease screening with a Streamlit interface, FastAPI inference service, and downloadable PDF reports.**
+## Live Demo
+
+Try the deployed Potato Leaf Disease Detector:
+
+https://potato-leaf-detector-anamika.streamlit.app
+
+Upload a potato leaf image to predict Early Blight,
+Late Blight, or Healthy using the trained CNN model.
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras-FF6F00?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
